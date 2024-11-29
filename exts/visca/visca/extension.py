@@ -7,9 +7,9 @@ import omni.ui as ui
 import configparser
 import pyaudio
 import grpc
-from .rpc import service_pb2 as convai_service_msg
-from .rpc import service_pb2_grpc as convai_service
-from .convai_audio_player import ConvaiAudioPlayer
+from .rpc import service_pb2 as visca_service_msg
+from .rpc import service_pb2_grpc as visca_service
+from .visca_audio_player import ViscaAudioPlayer
 from typing import Generator
 import io
 from pydub import AudioSegment
@@ -29,10 +29,10 @@ CHANNELS = 1
 RATE = 12000
 
 def log(text: str, warning: bool =False):
-    print(f"[convai] {'[Warning]' if warning else ''} {text}")
+    print(f"[visca] {'[Warning]' if warning else ''} {text}")
 
-class ConvaiExtension(omni.ext.IExt):
-    WINDOW_NAME = "Convai"
+class ViscaExtension(omni.ext.IExt):
+    WINDOW_NAME = "Visca"
     MENU_PATH = f"Window/{WINDOW_NAME}"
 
     def on_startup(self, ext_id: str):
@@ -43,12 +43,12 @@ class ConvaiExtension(omni.ext.IExt):
         self.SessionID = None
         self.channelState = grpc.ChannelConnectivity.IDLE
         self.client = None
-        self.ConvaiGRPCGetResponseProxy = None
+        self.ViscaGRPCGetResponseProxy = None
         self.PyAudio = pyaudio.PyAudio()
         self.stream = None
         self.Tick = False
         self.TickThread = None
-        self.ConvaiAudioPlayer = ConvaiAudioPlayer(self._on_start_talk_callback, self._on_stop_talk_callback)
+        self.ViscaAudioPlayer = ViscaAudioPlayer(self._on_start_talk_callback, self._on_stop_talk_callback)
         self.LastReadyTranscription = ""
         self.ResponseTextBuffer = ""
         self.OldCharacterID = ""
@@ -66,31 +66,31 @@ class ConvaiExtension(omni.ext.IExt):
         self.on_new_update_sub = None
 
 
-        ui.Workspace.set_show_window_fn(ConvaiExtension.WINDOW_NAME, partial(self.show_window, None))
-        ui.Workspace.show_window(ConvaiExtension.WINDOW_NAME)
+        ui.Workspace.set_show_window_fn(ViscaExtension.WINDOW_NAME, partial(self.show_window, None))
+        ui.Workspace.show_window(ViscaExtension.WINDOW_NAME)
         
         # # Put the new menu
         editor_menu = omni.kit.ui.get_editor_menu()
         
         if editor_menu:
             self._menu = editor_menu.add_item(
-                ConvaiExtension.MENU_PATH, self.show_window, toggle=True, value=True
+                ViscaExtension.MENU_PATH, self.show_window, toggle=True, value=True
             )
 
         # self.show_window(None, True)
         self.read_channel_address_from_config()
         self.create_channel()
 
-        log("ConvaiExtension started")
+        log("ViscaExtension started")
 
     def setup_UI(self):
-        self._window = ui.Window(ConvaiExtension.WINDOW_NAME, width=300, height=300)
+        self._window = ui.Window(ViscaExtension.WINDOW_NAME, width=300, height=300)
         self._window.set_visibility_changed_fn(self._visiblity_changed_fn)
 
         with self._window.frame:
             with ui.VStack():
                 with ui.HStack(height = ui.Length(30)):
-                    l = ui.Label("Convai API key")
+                    l = ui.Label("Visca API key")
                     self.APIKey_input_UI = ui.StringField()
 
                 ui.Spacer(height=5)
@@ -131,7 +131,7 @@ class ConvaiExtension(omni.ext.IExt):
             self.on_new_update_sub = (
                 omni.kit.app.get_app()
                 .get_update_event_stream()
-                .create_subscription_to_pop(self._on_UI_update_event, name="convai new UI update")
+                .create_subscription_to_pop(self._on_UI_update_event, name="visca new UI update")
             )
         
         self.read_UI_from_config()
@@ -170,29 +170,29 @@ class ConvaiExtension(omni.ext.IExt):
 
     def read_channel_address_from_config(self):
         config = configparser.ConfigParser()
-        config.read(os.path.join(__location__, 'convai.env'))
-        self.channel_address = config.get("CONVAI", "CHANNEL")
+        config.read(os.path.join(__location__, 'visca.env'))
+        self.channel_address = config.get("VISCA", "CHANNEL")
 
     def read_UI_from_config(self):
         config = configparser.ConfigParser()
-        config.read(os.path.join(__location__, 'convai.env'))
-        api_key = config.get("CONVAI", "API_KEY")
+        config.read(os.path.join(__location__, 'visca.env'))
+        api_key = config.get("VISCA", "API_KEY")
         self.APIKey_input_UI.model.set_value(api_key)
 
-        character_id = config.get("CONVAI", "CHARACTER_ID")
+        character_id = config.get("VISCA", "CHARACTER_ID")
         self.CharID_input_UI.model.set_value(character_id)
 
-        actions_text = config.get("CONVAI", "ACTIONS")
+        actions_text = config.get("VISCA", "ACTIONS")
         self.actions_input_UI.model.set_value(actions_text)
 
     def save_config(self):
         config = configparser.ConfigParser()
-        config.read(os.path.join(__location__, 'convai.env'))
-        config.set("CONVAI", "API_KEY", self.APIKey_input_UI.model.get_value_as_string())
-        config.set("CONVAI", "CHARACTER_ID", self.CharID_input_UI.model.get_value_as_string())
-        config.set("CONVAI", "ACTIONS", self.actions_input_UI.model.get_value_as_string())
-        # config.set("CONVAI", "CHANNEL", self.channel_address)
-        with open(os.path.join(__location__, 'convai.env'), 'w') as file:
+        config.read(os.path.join(__location__, 'visca.env'))
+        config.set("VISCA", "API_KEY", self.APIKey_input_UI.model.get_value_as_string())
+        config.set("VISCA", "CHARACTER_ID", self.CharID_input_UI.model.get_value_as_string())
+        config.set("VISCA", "ACTIONS", self.actions_input_UI.model.get_value_as_string())
+        # config.set("VISCA", "CHANNEL", self.channel_address)
+        with open(os.path.join(__location__, 'visca.env'), 'w') as file:
             config.write(file)
 
     def create_channel(self):
@@ -247,13 +247,13 @@ class ConvaiExtension(omni.ext.IExt):
             self.start_mic()
 
             # Stop any on-going audio
-            self.ConvaiAudioPlayer.stop()
+            self.ViscaAudioPlayer.stop()
 
             # Save API key, character ID and session ID
             self.save_config()
 
             # Create gRPC stream
-            self.ConvaiGRPCGetResponseProxy = ConvaiGRPCGetResponseProxy(self)
+            self.ViscaGRPCGetResponseProxy = ViscaGRPCGetResponseProxy(self)
 
     def on_shutdown(self):
         self.clean_grpc_stream()
@@ -268,9 +268,9 @@ class ConvaiExtension(omni.ext.IExt):
 
         self._window = None
         # Deregister the function that shows the window from omni.ui
-        ui.Workspace.set_show_window_fn(ConvaiExtension.WINDOW_NAME, None)
+        ui.Workspace.set_show_window_fn(ViscaExtension.WINDOW_NAME, None)
 
-        log("ConvaiExtension shutdown")
+        log("ViscaExtension shutdown")
 
     def start_mic(self):
         if self.IsCapturingAudio == True:
@@ -302,10 +302,10 @@ class ConvaiExtension(omni.ext.IExt):
         log("stop_mic - Stopped Recording")
 
     def clean_grpc_stream(self):
-        if self.ConvaiGRPCGetResponseProxy:
-            self.ConvaiGRPCGetResponseProxy.Parent = None
-            del self.ConvaiGRPCGetResponseProxy
-        self.ConvaiGRPCGetResponseProxy = None
+        if self.ViscaGRPCGetResponseProxy:
+            self.ViscaGRPCGetResponseProxy.Parent = None
+            del self.ViscaGRPCGetResponseProxy
+        self.ViscaGRPCGetResponseProxy = None
         # self.close_channel()
 
     def on_transcription_received(self, Transcription: str, IsTranscriptionReady: bool, IsFinal: bool):
@@ -328,7 +328,7 @@ class ConvaiExtension(omni.ext.IExt):
                 self.response_UI_Label_text = self.ResponseTextBuffer
                 self.transcription_UI_Label_text = self.ResponseTextBuffer
                 self.ResponseTextBuffer = ""
-        self.ConvaiAudioPlayer.append_to_stream(ReceivedAudio)
+        self.ViscaAudioPlayer.append_to_stream(ReceivedAudio)
         return
 
     def on_actions_received(self, Action: str):
@@ -358,7 +358,7 @@ class ConvaiExtension(omni.ext.IExt):
 	    Called when the response stream is done
         '''
 
-        self.ConvaiGRPCGetResponseProxy = None
+        self.ViscaGRPCGetResponseProxy = None
         with self.UI_Lock:
             self.StartTalking_Btn_text = "Start Talking"
             self.StartTalking_Btn_state = True
@@ -371,14 +371,14 @@ class ConvaiExtension(omni.ext.IExt):
         '''
         log(f"on_failure called with message: {ErrorMessage}", 1)
         with self.UI_Lock:
-            self.transcription_UI_Label_text = "ERROR: Please double check API key and the character ID - Send logs to support@convai.com for further assistance."
+            self.transcription_UI_Label_text = "ERROR: Please double check API key and the character ID - Send logs to support@visca.dev for further assistance."
         self.stop_mic()
         self.on_finish()
 
     def _on_tick(self):
         while self.Tick:
             time.sleep(0.1)
-            if self.IsCapturingAudio == False or self.ConvaiGRPCGetResponseProxy is None:
+            if self.IsCapturingAudio == False or self.ViscaGRPCGetResponseProxy is None:
                 continue
             self.read_mic_and_send_to_grpc(False)
 
@@ -398,10 +398,10 @@ class ConvaiExtension(omni.ext.IExt):
                 log("read_mic_and_send_to_grpc - could not read mic stream since it is none", 1)
                 data = bytes()
 
-            if self.ConvaiGRPCGetResponseProxy:
-                self.ConvaiGRPCGetResponseProxy.write_audio_data_to_send(data, LastWrite)
+            if self.ViscaGRPCGetResponseProxy:
+                self.ViscaGRPCGetResponseProxy.write_audio_data_to_send(data, LastWrite)
             else:
-                log("read_mic_and_send_to_grpc - ConvaiGRPCGetResponseProxy is not valid", 1)
+                log("read_mic_and_send_to_grpc - ViscaGRPCGetResponseProxy is not valid", 1)
 
     def fire_event(self, event_name):
         def registered_event_name(event_name):
@@ -441,7 +441,7 @@ class ConvaiExtension(omni.ext.IExt):
         """Set the menu to create this window on and off"""
         editor_menu = omni.kit.ui.get_editor_menu()
         if editor_menu:
-            editor_menu.set_value(ConvaiExtension.MENU_PATH, value)
+            editor_menu.set_value(ViscaExtension.MENU_PATH, value)
 
     async def _destroy_window_async(self):
         # with self.UI_Lock:
@@ -452,8 +452,8 @@ class ConvaiExtension(omni.ext.IExt):
             self._window.destroy()
             self._window = None
 
-class ConvaiGRPCGetResponseProxy:
-    def __init__(self, Parent: ConvaiExtension):
+class ViscaGRPCGetResponseProxy:
+    def __init__(self, Parent: ViscaExtension):
         self.Parent = Parent
 
         self.AudioBuffer = deque(maxlen=4096*2)
@@ -467,7 +467,7 @@ class ConvaiGRPCGetResponseProxy:
 
         # self._main_task = asyncio.ensure_future(self.activate())
         self.activate()
-        log("ConvaiGRPCGetResponseProxy constructor")
+        log("ViscaGRPCGetResponseProxy constructor")
 
     def activate(self):
         # Validate API key
@@ -487,7 +487,7 @@ class ConvaiGRPCGetResponseProxy:
             return
 
         # Create the stub
-        self.client = convai_service.ConvaiServiceStub(self.Parent.channel)
+        self.client = visca_service.ViscaServiceStub(self.Parent.channel)
 
         threading.Thread(target=self.init_stream).start()
 
@@ -526,14 +526,14 @@ class ConvaiGRPCGetResponseProxy:
             return
         self.Parent.on_finish()
 
-    def create_initial_GetResponseRequest(self)-> convai_service_msg.GetResponseRequest:
-        action_config = convai_service_msg.ActionConfig(
+    def create_initial_GetResponseRequest(self)-> visca_service_msg.GetResponseRequest:
+        action_config = visca_service_msg.ActionConfig(
             classification = 'singlestep',
             context_level = 1
         )
         action_config.actions[:] = self.Parent.parse_actions()
         action_config.objects.append(
-            convai_service_msg.ActionConfig.Object(
+            visca_service_msg.ActionConfig.Object(
                 name = "dummy",
                 description = "A dummy object."
             )
@@ -541,24 +541,24 @@ class ConvaiGRPCGetResponseProxy:
 
         log(f"gRPC - actions parsed: {action_config.actions}")
         action_config.characters.append(
-            convai_service_msg.ActionConfig.Character(
+            visca_service_msg.ActionConfig.Character(
                 name = "User",
                 bio = "Person playing the game and asking questions."
             )
         )
-        get_response_config = convai_service_msg.GetResponseRequest.GetResponseConfig(
+        get_response_config = visca_service_msg.GetResponseRequest.GetResponseConfig(
                 character_id = self.Parent.CharID_input_UI.model.get_value_as_string(),
                 api_key = self.Parent.APIKey_input_UI.model.get_value_as_string(),
-                audio_config = convai_service_msg.AudioConfig(
+                audio_config = visca_service_msg.AudioConfig(
                     sample_rate_hertz = RATE
                 ),
                 action_config = action_config
             )
         if self.Parent.SessionID and self.Parent.SessionID != "":
             get_response_config.session_id = self.Parent.SessionID
-        return convai_service_msg.GetResponseRequest(get_response_config = get_response_config)
+        return visca_service_msg.GetResponseRequest(get_response_config = get_response_config)
 
-    def create_getGetResponseRequests(self)-> Generator[convai_service_msg.GetResponseRequest, None, None]:
+    def create_getGetResponseRequests(self)-> Generator[visca_service_msg.GetResponseRequest, None, None]:
         req = self.create_initial_GetResponseRequest()
         yield req
 
@@ -578,10 +578,10 @@ class ConvaiGRPCGetResponseProxy:
                 self.NumberOfAudioBytesSent += len(data)
                 # if len(data):
                 #     log(f"len(data) = {len(data)}")
-                GetResponseData = convai_service_msg.GetResponseRequest.GetResponseData(audio_data = data)
+                GetResponseData = visca_service_msg.GetResponseRequest.GetResponseData(audio_data = data)
 
             # Prepare the request
-            req = convai_service_msg.GetResponseRequest(get_response_data = GetResponseData)
+            req = visca_service_msg.GetResponseRequest(get_response_data = GetResponseData)
             yield req
 
             if IsThisTheFinalWrite:
@@ -633,4 +633,4 @@ class ConvaiGRPCGetResponseProxy:
         #     self._read_task.cancel()
         # if self.call:
         #     self.call.cancel()
-        log("ConvaiGRPCGetResponseProxy Destructor")
+        log("ViscaGRPCGetResponseProxy Destructor")
