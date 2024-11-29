@@ -26,8 +26,8 @@ ignore_import_check = false
 version = "1.0.3"
 
 # The title and description fields are primarily for displaying extension info in UI
-title = "Convai"
-description="Integrate Convai API with Omniverse."
+title = "VISCA"
+description="Integrate ViscaHMI API with Omniverse."
 
 icon = "data/icon.png"
 preview_image = "data/preview.png"
@@ -39,13 +39,13 @@ readme  = "docs/README.md"
 feature = true
 
 # URL of the extension source repository.
-repository = "https://github.com/Conv-AI/ov_extension"
+repository = "https://github.com/onchainengineering/hmi-extension-omniverse"
 
 # One of categories for UI.
-category = "Convai"
+category = "VISCA"
 
 # Keywords for the extension
-keywords = ["kit", "convai", "chatgpt", "chatbot"]
+keywords = ["kit", "visca", "chatgpt", "chatbot", "blockchain-ai"]
 
 
 # Use omni.ui to build simple UI
@@ -53,6 +53,6 @@ keywords = ["kit", "convai", "chatgpt", "chatbot"]
 "omni.kit.uiapp" = {}
 "omni.anim.graph.bundle" = {}
 
-# Main python module this extension provides, it will be publicly available as "import convai".
+# Main python module this extension provides, it will be publicly available as "import viscahmi".
 [[python.module]]
-name = "convai"
+name = "viscahmi"

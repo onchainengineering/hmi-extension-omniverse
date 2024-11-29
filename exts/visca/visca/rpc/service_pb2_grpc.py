@@ -5,7 +5,7 @@ import grpc
 from . import service_pb2 as service__pb2
 
 
-class ConvaiServiceStub(object):
+class ViscaServiceStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -15,33 +15,33 @@ class ConvaiServiceStub(object):
             channel: A grpc.Channel.
         """
         self.Hello = channel.unary_unary(
-                '/service.ConvaiService/Hello',
+                '/service.ViscaService/Hello',
                 request_serializer=service__pb2.HelloRequest.SerializeToString,
                 response_deserializer=service__pb2.HelloResponse.FromString,
                 )
         self.HelloStream = channel.stream_stream(
-                '/service.ConvaiService/HelloStream',
+                '/service.ViscaService/HelloStream',
                 request_serializer=service__pb2.HelloRequest.SerializeToString,
                 response_deserializer=service__pb2.HelloResponse.FromString,
                 )
         self.SpeechToText = channel.stream_stream(
-                '/service.ConvaiService/SpeechToText',
+                '/service.ViscaService/SpeechToText',
                 request_serializer=service__pb2.STTRequest.SerializeToString,
                 response_deserializer=service__pb2.STTResponse.FromString,
                 )
         self.GetResponse = channel.stream_stream(
-                '/service.ConvaiService/GetResponse',
+                '/service.ViscaService/GetResponse',
                 request_serializer=service__pb2.GetResponseRequest.SerializeToString,
                 response_deserializer=service__pb2.GetResponseResponse.FromString,
                 )
         self.GetResponseSingle = channel.unary_stream(
-                '/service.ConvaiService/GetResponseSingle',
+                '/service.ViscaService/GetResponseSingle',
                 request_serializer=service__pb2.GetResponseRequestSingle.SerializeToString,
                 response_deserializer=service__pb2.GetResponseResponse.FromString,
                 )
 
 
-class ConvaiServiceServicer(object):
+class ViscaServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Hello(self, request, context):
@@ -75,7 +75,7 @@ class ConvaiServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_ConvaiServiceServicer_to_server(servicer, server):
+def add_ViscaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Hello': grpc.unary_unary_rpc_method_handler(
                     servicer.Hello,
@@ -104,12 +104,12 @@ def add_ConvaiServiceServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'service.ConvaiService', rpc_method_handlers)
+            'service.ViscaService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class ConvaiService(object):
+class ViscaService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -123,7 +123,7 @@ class ConvaiService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/service.ConvaiService/Hello',
+        return grpc.experimental.unary_unary(request, target, '/service.ViscaService/Hello',
             service__pb2.HelloRequest.SerializeToString,
             service__pb2.HelloResponse.FromString,
             options, channel_credentials,
@@ -140,7 +140,7 @@ class ConvaiService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/service.ConvaiService/HelloStream',
+        return grpc.experimental.stream_stream(request_iterator, target, '/service.ViscaService/HelloStream',
             service__pb2.HelloRequest.SerializeToString,
             service__pb2.HelloResponse.FromString,
             options, channel_credentials,
@@ -157,7 +157,7 @@ class ConvaiService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/service.ConvaiService/SpeechToText',
+        return grpc.experimental.stream_stream(request_iterator, target, '/service.ViscaService/SpeechToText',
             service__pb2.STTRequest.SerializeToString,
             service__pb2.STTResponse.FromString,
             options, channel_credentials,
@@ -174,7 +174,7 @@ class ConvaiService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/service.ConvaiService/GetResponse',
+        return grpc.experimental.stream_stream(request_iterator, target, '/service.ViscaService/GetResponse',
             service__pb2.GetResponseRequest.SerializeToString,
             service__pb2.GetResponseResponse.FromString,
             options, channel_credentials,
@@ -191,7 +191,7 @@ class ConvaiService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/service.ConvaiService/GetResponseSingle',
+        return grpc.experimental.unary_stream(request, target, '/service.ViscaService/GetResponseSingle',
             service__pb2.GetResponseRequestSingle.SerializeToString,
             service__pb2.GetResponseResponse.FromString,
             options, channel_credentials,
